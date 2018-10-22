@@ -30,6 +30,7 @@
 
 #include "LoRaWan.h"
 
+HardwareSerial Serial1(2);
 
 LoRaWanClass::LoRaWanClass(void)
 {
@@ -38,14 +39,14 @@ LoRaWanClass::LoRaWanClass(void)
 
 void LoRaWanClass::init(void)
 {
-    SerialLoRa.begin(9600);
+    Serial1.begin(9600, SERIAL_8N1, 16, 17);
 }
 
 void LoRaWanClass::getVersion(char *buffer, short length, unsigned char timeout)
 {
     if(buffer)
     {
-        while(SerialLoRa.available())SerialLoRa.read();
+        while(Serial1.available())Serial1.read();
         sendCommand("AT+VER=?\r\n");
         readBuffer(buffer, length, timeout);    
     }
@@ -55,7 +56,7 @@ void LoRaWanClass::getId(char *buffer, short length, unsigned char timeout)
 {
     if(buffer)
     {
-        while(SerialLoRa.available())SerialLoRa.read();
+        while(Serial1.available())Serial1.read();
         sendCommand("AT+ID=?\r\n");
         readBuffer(buffer, length, timeout);    
     }
@@ -237,16 +238,16 @@ bool LoRaWanClass::transferPacket(char *buffer, unsigned char timeout)
 {
     unsigned char length = strlen(buffer);
     
-    while(SerialLoRa.available())SerialLoRa.read();
+    while(Serial1.available())Serial1.read();
     
     sendCommand("AT+MSG=\"");
-    for(unsigned char i = 0; i < length; i ++)SerialLoRa.write(buffer[i]);
+    for(unsigned char i = 0; i < length; i ++)Serial1.write(buffer[i]);
     sendCommand("\"\r\n");
     
     memset(_buffer, 0, BEFFER_LENGTH_MAX);
     readBuffer(_buffer, BEFFER_LENGTH_MAX, timeout);
 #if _DEBUG_SERIAL_    
-    SerialUSB.print(_buffer);
+    Serial.print(_buffer);
 #endif    
     if(strstr(_buffer, "+MSG: Done"))return true;
     return false;
@@ -256,20 +257,20 @@ bool LoRaWanClass::transferPacket(unsigned char *buffer, unsigned char length, u
 {
     char temp[2] = {0};
     
-    while(SerialLoRa.available())SerialLoRa.read();
+    while(Serial1.available())Serial1.read();
     
     sendCommand("AT+MSGHEX=\"");
     for(unsigned char i = 0; i < length; i ++)
     {
         sprintf(temp,"%02x", buffer[i]);
-        SerialLoRa.write(temp); 
+        Serial1.write(temp); 
     }
     sendCommand("\"\r\n");
     
     memset(_buffer, 0, BEFFER_LENGTH_MAX);
     readBuffer(_buffer, BEFFER_LENGTH_MAX, timeout);
 #if _DEBUG_SERIAL_    
-    SerialUSB.print(_buffer);
+    Serial.print(_buffer);
 #endif    
     if(strstr(_buffer, "+MSGHEX: Done"))return true;
     return false;
@@ -279,16 +280,16 @@ bool LoRaWanClass::transferPacketWithConfirmed(char *buffer, unsigned char timeo
 {
     unsigned char length = strlen(buffer);
     
-    while(SerialLoRa.available())SerialLoRa.read();
+    while(Serial1.available())Serial1.read();
     
     sendCommand("AT+CMSG=\"");
-    for(unsigned char i = 0; i < length; i ++)SerialLoRa.write(buffer[i]);
+    for(unsigned char i = 0; i < length; i ++)Serial1.write(buffer[i]);
     sendCommand("\"\r\n");
     
     memset(_buffer, 0, BEFFER_LENGTH_MAX);
     readBuffer(_buffer, BEFFER_LENGTH_MAX, timeout);
 #if _DEBUG_SERIAL_    
-    SerialUSB.print(_buffer);
+    Serial.print(_buffer);
 #endif      
     if(strstr(_buffer, "+CMSG: ACK Received"))return true;
     return false;
@@ -298,17 +299,17 @@ bool LoRaWanClass::transferPacketWithConfirmed(unsigned char *buffer, unsigned c
 {
     char temp[2] = {0};
     
-    while(SerialLoRa.available())SerialLoRa.read();
+    while(Serial1.available())Serial1.read();
     
     sendCommand("AT+CMSGHEX=\"");
     for(unsigned char i = 0; i < length; i ++)
     {
         sprintf(temp,"%02x", buffer[i]);
-        SerialLoRa.write(temp); 
+        Serial1.write(temp); 
     }
     sendCommand("\"\r\n");
 #if _DEBUG_SERIAL_    
-    SerialUSB.print(_buffer);
+    Serial.print(_buffer);
 #endif      
     memset(_buffer, 0, BEFFER_LENGTH_MAX);
     readBuffer(_buffer, BEFFER_LENGTH_MAX, timeout);
@@ -374,16 +375,16 @@ bool LoRaWanClass::transferProprietaryPacket(char *buffer, unsigned char timeout
 {
     unsigned char length = strlen(buffer);
     
-    while(SerialLoRa.available())SerialLoRa.read();
+    while(Serial1.available())Serial1.read();
     
     sendCommand("AT+PMSG=\"");
-    for(unsigned char i = 0; i < length; i ++)SerialLoRa.write(buffer[i]);
+    for(unsigned char i = 0; i < length; i ++)Serial1.write(buffer[i]);
     sendCommand("\"\r\n");
     
     memset(_buffer, 0, BEFFER_LENGTH_MAX);
     readBuffer(_buffer, BEFFER_LENGTH_MAX, timeout);
 #if _DEBUG_SERIAL_    
-    SerialUSB.print(_buffer);
+    Serial.print(_buffer);
 #endif    
     if(strstr(_buffer, "+PMSG: Done"))return true;
     return false;
@@ -393,20 +394,20 @@ bool LoRaWanClass::transferProprietaryPacket(unsigned char *buffer, unsigned cha
 {
     char temp[2] = {0};
     
-    while(SerialLoRa.available())SerialLoRa.read();
+    while(Serial1.available())Serial1.read();
     
     sendCommand("AT+PMSGHEX=\"");
     for(unsigned char i = 0; i < length; i ++)
     {
         sprintf(temp,"%02x", buffer[i]);
-        SerialLoRa.write(temp); 
+        Serial1.write(temp); 
     }
     sendCommand("\"\r\n");
     
     memset(_buffer, 0, BEFFER_LENGTH_MAX);
     readBuffer(_buffer, BEFFER_LENGTH_MAX, timeout);
 #if _DEBUG_SERIAL_    
-    SerialUSB.print(_buffer);
+    Serial.print(_buffer);
 #endif    
     if(strstr(_buffer, "+PMSGHEX: Done"))return true;
     return false;
@@ -565,7 +566,7 @@ bool LoRaWanClass::setOTAAJoin(_otaa_join_cmd_t command, unsigned char timeout)
     memset(_buffer, 0, BEFFER_LENGTH_MAX);
     readBuffer(_buffer, BEFFER_LENGTH_MAX, timeout);
 #if _DEBUG_SERIAL_    
-    SerialUSB.print(_buffer);
+    Serial.print(_buffer);
 #endif  
 
     ptr = strstr(_buffer, "+JOIN: Join failed");
@@ -622,7 +623,7 @@ bool LoRaWanClass::transferPacketP2PMode(char *buffer, unsigned char timeout)
     unsigned char length = strlen(buffer);
     
     sendCommand("AT+TEST=TXLRSTR,\"");
-    for(unsigned char i = 0; i < length; i ++)SerialLoRa.write(buffer[i]);
+    for(unsigned char i = 0; i < length; i ++)Serial1.write(buffer[i]);
     sendCommand("\"\r\n");
     
     // memset(_buffer, 0, BEFFER_LENGTH_MAX);
@@ -642,7 +643,7 @@ bool LoRaWanClass::transferPacketP2PMode(unsigned char *buffer, unsigned char le
     for(unsigned char i = 0; i < length; i ++)
     {
         sprintf(temp,"%02x", buffer[i]);
-        SerialLoRa.write(temp);    
+        Serial1.write(temp);    
     }
     sendCommand("\"\r\n");
     
@@ -662,7 +663,7 @@ short LoRaWanClass::receivePacketP2PMode(unsigned char *buffer, short length, sh
     
     sendCommandAndWaitForResponse("AT+TEST=RXLRPKT\r\n", "+TEST: RXLRPKT", 2);
     
-    while(SerialLoRa.available())SerialLoRa.read();
+    while(Serial1.available())Serial1.read();
     memset(_buffer, 0, BEFFER_LENGTH_MAX);
     readBuffer(_buffer, BEFFER_LENGTH_MAX, timeout);
     
@@ -729,8 +730,8 @@ short LoRaWanClass::getBatteryVoltage(void)
 
 void LoRaWanClass::loraDebug(void)
 {
-    if(SerialUSB.available())SerialLoRa.write(SerialUSB.read());
-    if(SerialLoRa.available())SerialUSB.write(SerialLoRa.read());
+    if(Serial.available())Serial1.write(Serial.read());
+    if(Serial1.available())Serial.write(Serial1.read());
 }
 
 #if _DEBUG_SERIAL_
@@ -742,7 +743,7 @@ void LoRaWanClass::loraDebugPrint(unsigned char timeout)
     
     while(1)
     {
-        while(SerialLoRa.available()) SerialUSB.write(SerialLoRa.read());  
+        while(Serial1.available()) Serial.write(Serial1.read());  
         
         timerEnd = millis();
         if(timerEnd - timerStart > 1000 * timeout)break;
@@ -752,7 +753,7 @@ void LoRaWanClass::loraDebugPrint(unsigned char timeout)
 
 void LoRaWanClass::sendCommand(char *command)
 {
-    SerialLoRa.print(command);
+    Serial1.print(command);
 }
 
 short LoRaWanClass::readBuffer(char *buffer, short length, unsigned char timeout)
@@ -766,9 +767,9 @@ short LoRaWanClass::readBuffer(char *buffer, short length, unsigned char timeout
     {
         if(i < length)
         {
-            while(SerialLoRa.available())
+            while(Serial1.available())
             {
-                char c = SerialLoRa.read();  
+                char c = Serial1.read();  
                 buffer[i ++] = c;
             }  
         }
@@ -790,9 +791,9 @@ bool LoRaWanClass::waitForResponse(char* response, unsigned char timeout)
 
     while(1)
     {
-        if(SerialLoRa.available())
+        if(Serial1.available())
         {
-            char c = SerialLoRa.read();
+            char c = Serial1.read();
 
             sum = (c == response[sum]) ? sum + 1 : 0;
             if(sum == len)break;
